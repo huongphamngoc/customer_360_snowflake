@@ -161,7 +161,7 @@ Once the containers are running, access the Airflow UI:
 2. Locate the DAG named:
 
 ```text
-customer_360_snow
+DbtDag_customer360_snowflake
 ```
 
 Defined in:
@@ -172,16 +172,6 @@ dags/cosmos_snowflake_dbt.py
 
 3. Unpause the DAG using the toggle switch.
 4. Click **Trigger DAG** (▶ Play button).
-
-#### What Happens?
-
-Thanks to Astronomer Cosmos:
-
-* The dbt project is automatically parsed.
-* `manifest.json` is used to generate task dependencies.
-* Every dbt model appears as an individual Airflow task.
-* Model execution can be monitored directly from Airflow.
-* Failed nodes can be retried independently.
 
 ---
 
