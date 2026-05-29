@@ -28,11 +28,17 @@ customer_360_snowflake/
 │           └── marts/          # Presentation layer: Business-ready tables (Executive, Marketing)
 ```
 
-# 📊 Data Modeling Architecture (dbt Models)
+## 📊 Data Modeling Architecture (dbt Models)
 
 The project follows a layered dbt architecture to ensure maintainability, scalability, and clear separation of concerns.
 
-## Staging Layer (`models/staging`)
+### Seeds (`dags/dbt/.../seeds/`)
+Static reference data loaded directly into Snowflake as tables. These are used to enrich transactional data with standardized dimensions without hardcoding values in SQL.
+* **Key Domains:** `age_cohorts`, `country_risk_ratings`, `credit_score_ranges`, `currency_codes`, `marketing_segments`.
+
+---
+
+### Staging Layer (`models/staging`)
 
 The foundational layer. Models here typically maintain a 1:1 relationship with raw source tables. The primary goal is data cleansing and standardization: renaming columns for consistency, casting data types, handling `NULL` values, and removing exact duplicates.
 Standardizes raw source tables into clean, consistently formatted views:
@@ -48,13 +54,7 @@ This layer serves as the foundation for downstream transformations.
 
 ---
 
-### Seeds (`dags/dbt/.../seeds/`)
-Static reference data loaded directly into Snowflake as tables. These are used to enrich transactional data with standardized dimensions without hardcoding values in SQL.
-* **Key Domains:** `age_cohorts`, `country_risk_ratings`, `credit_score_ranges`, `currency_codes`, `marketing_segments`.
-
----
-
-## Intermediate Layer (`models/intermediate`)
+### Intermediate Layer (`models/intermediate`)
 
 The core business logic layer. Here, we join staging tables and calculate complex, domain-specific metrics. Models are organized by analytical domains to keep logic isolated and reusable:
 * **Customer Analytics:** * `int_customer_360_master`: The central hub consolidating demographics, retention, and profile data.
@@ -64,7 +64,7 @@ The core business logic layer. Here, we join staging tables and calculate comple
 
 ---
 
-## Marts Layer (`models/marts`)
+### Marts Layer (`models/marts`)
 
 The presentation layer. These are highly denormalized, wide tables optimized for Business Intelligence (BI) tools (like Power BI or Tableau) and end-user consumption. They are organized by business unit to ensure data is strictly tailored to stakeholder needs:
 * **Executive (`/executive`):** * `executive_customer_dashboard`: High-level KPIs such as total relationship value, active customer counts, and net worth.
@@ -81,7 +81,7 @@ These models are consumed directly by:
 
 ---
 
-# ⚙️ Prerequisites
+## ⚙️ Prerequisites
 
 Before you begin, ensure the following dependencies are installed:
 
@@ -91,9 +91,9 @@ Before you begin, ensure the following dependencies are installed:
 
 ---
 
-# 🛠️ Local Setup & Execution
+## 🛠️ Local Setup & Execution
 
-## 1. Configure the Environment
+### 1. Configure the Environment
 
 Create a `.env` file in the project root directory (you can copy `.env_example` if available) and configure your Airflow connection to Snowflake.
 
@@ -120,7 +120,7 @@ AIRFLOW_CONN_SNOWFLAKE_DEFAULT='{
 
 ---
 
-## 2. Build and Start the Project
+### 2. Build and Start the Project
 
 The `Dockerfile` is configured to create a dedicated Python virtual environment named `dbt_venv_snowflake` specifically for `dbt-snowflake`.
 
@@ -143,7 +143,7 @@ astro dev restart
 
 ---
 
-## 3. Access Airflow
+### 3. Access Airflow
 
 Once the containers are running, access the Airflow UI:
 
@@ -155,7 +155,7 @@ Once the containers are running, access the Airflow UI:
 
 ---
 
-## 4. Run the Pipeline
+### 4. Run the Pipeline
 
 1. Open the Airflow UI.
 2. Locate the DAG named:
@@ -173,7 +173,7 @@ dags/cosmos_snowflake_dbt.py
 3. Unpause the DAG using the toggle switch.
 4. Click **Trigger DAG** (▶ Play button).
 
-### What Happens?
+#### What Happens?
 
 Thanks to Astronomer Cosmos:
 
@@ -185,7 +185,7 @@ Thanks to Astronomer Cosmos:
 
 ---
 
-# 🛑 Stopping the Environment
+## 🛑 Stopping the Environment
 
 Stop the running containers while preserving DAG history and metadata:
 
@@ -201,9 +201,9 @@ astro dev kill
 
 ---
 
-# 🧠 Key Features Implemented
+## 🧠 Key Features Implemented
 
-## Seamless dbt-Airflow Integration
+### Seamless dbt-Airflow Integration
 
 No need for:
 
@@ -214,7 +214,7 @@ Astronomer Cosmos automatically parses the dbt project and generates the DAG str
 
 ---
 
-## Virtual Environment Isolation
+### Virtual Environment Isolation
 
 A dedicated dbt virtual environment ensures:
 
@@ -224,7 +224,7 @@ A dedicated dbt virtual environment ensures:
 
 ---
 
-## Seed Data Injection
+### Seed Data Injection
 
 Extensive use of dbt seeds to load static reference datasets into Snowflake.
 
@@ -237,7 +237,7 @@ Examples:
 
 ---
 
-## Modular Analytics Architecture
+### Modular Analytics Architecture
 
 Business logic is organized into dedicated analytical domains:
 
