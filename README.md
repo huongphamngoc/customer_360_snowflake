@@ -1,87 +1,198 @@
+# Customer 360 Data Pipeline: dbt, Snowflake & Airflow (via Cosmos)
 
-# Customer 360 Snowflake Data Pipeline
+This repository contains a modern Data Engineering pipeline designed to build a comprehensive **Customer 360** view for a financial institution. It leverages **dbt (Data Build Tool)** for data transformation, **Snowflake** as the cloud data warehouse, and **Apache Airflow** (using **Astronomer Cosmos**) for seamless orchestration.
 
-## 📖 Overview
-This repository contains a modern data data pipeline designed to build a Customer 360 data model. It utilizes **Apache Airflow** for orchestration, **dbt (data build tool)** for data transformation, and **Snowflake** as the cloud data platform. 
+## 🚀 Tech Stack & Architecture
 
-The project leverages [Astronomer Cosmos](https://github.com/astronomer/astronomer-cosmos) to seamlessly integrate dbt into Airflow, rendering dbt models as individual Airflow tasks.
+* **Orchestration:** [Apache Airflow](https://airflow.apache.org/) (managed via [Astro CLI](https://docs.astronomer.io/astro/cli/overview))
+* **Transformation:** [dbt-core](https://www.getdbt.com/) & `dbt-snowflake`
+* **Data Warehouse:** [Snowflake](https://www.snowflake.com/)
+* **Integration:** [Astronomer Cosmos](https://astronomer.github.io/astronomer-cosmos/) (Dynamically converts dbt projects into Airflow DAGs)
 
-## 🛠 Prerequisites
-Before setting up the project, ensure you have the following installed:
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running)
-* [Astro CLI](https://docs.astronomer.io/astro/cli/install-cli) (Astronomer's command-line interface)
-* Git
-* A [Snowflake](https://www.snowflake.com/) account with necessary roles, databases, and warehouses created.
+## 📁 Project Structure
 
-## 🗂 Project Structure
-* `dags/`: Contains the Airflow DAG scripts (e.g., `cosmos_snowflake_dbt.py`).
-* `dags/dbt/customer_360_snowflake/`: The dbt project directory containing SQL models (staging, intermediate, marts), seeds, and YAML configurations.
-* `Dockerfile`: Defines the Astro Runtime image.
-* `requirements.txt`: Python dependencies required for the project (e.g., `astronomer-cosmos`, `dbt-snowflake`).
-* `packages.txt`: OS-level packages (if any).
+The project follows dbt best practices, organizing data transformations into distinct layers:
 
-## 🚀 Setup and Installation
+```text
+customer_360_snowflake/
+├── Dockerfile                  # Astro Runtime image & dbt virtual env setup
+├── requirements.txt            # Airflow providers (Cosmos, Snowflake)
+├── dags/
+│   ├── cosmos_snowflake_dbt.py # Airflow DAG using Cosmos DbtDag
+│   └── dbt/customer_360_snowflake/
+│       ├── dbt_project.yml     # dbt project configuration
+│       ├── seeds/              # Reference data (CSV mappings, risk ratings, etc.)
+│       └── models/
+│           ├── staging/        # Base layer: Raw data cleansing & standardization
+│           ├── intermediate/   # Logic layer: Aggregations, risk profiles, financial summaries
+│           └── marts/          # Presentation layer: Business-ready tables (Executive, Marketing)
 
-### 1. Clone the repository
-```bash
-git clone [https://github.com/huongphamngoc/customer_360_snowflake.git](https://github.com/huongphamngoc/customer_360_snowflake.git)
-cd customer_360_snowflake
+# 📊 Data Modeling Architecture (dbt Models)
 
-# 🚀 Local Development Guide
+The project follows a layered dbt architecture to ensure maintainability, scalability, and clear separation of concerns.
 
-## 2. Configure Environment Variables
+## Staging Layer (`models/staging`)
 
-To allow Airflow (and dbt via Cosmos) to communicate with Snowflake, set up the connection URI.
+The foundational layer. Models here typically maintain a 1:1 relationship with raw source tables. The primary goal is data cleansing and standardization: renaming columns for consistency, casting data types, handling `NULL` values, and removing exact duplicates.
+Standardizes raw source tables into clean, consistently formatted views:
 
-Create a `.env` file in the root directory of the project and add your Snowflake connection string:
+* Customers
+* Accounts
+* Cards
+* Loans
+* Investments
+* Transactions
 
-```env
-AIRFLOW_CONN_SNOWFLAKE_DEFAULT=snowflake://<username>:<password>@<account_identifier>/<database>/<schema>?warehouse=<warehouse>&role=<role>
-```
-
-> **Note:** Replace the placeholders with your actual Snowflake credentials. Do **not** commit the `.env` file to version control.
+This layer serves as the foundation for downstream transformations.
 
 ---
 
-## 3. Start the Local Airflow Environment
+### Seeds (`dags/dbt/.../seeds/`)
+Static reference data loaded directly into Snowflake as tables. These are used to enrich transactional data with standardized dimensions without hardcoding values in SQL.
+* **Key Domains:** `age_cohorts`, `country_risk_ratings`, `credit_score_ranges`, `currency_codes`, `marketing_segments`.
 
-Use the Astro CLI to build the Docker image and start the Airflow Webserver, Scheduler, and Postgres metadata database:
+---
+
+## Intermediate Layer (`models/intermediate`)
+
+The core business logic layer. Here, we join staging tables and calculate complex, domain-specific metrics. Models are organized by analytical domains to keep logic isolated and reusable:
+* **Customer Analytics:** * `int_customer_360_master`: The central hub consolidating demographics, retention, and profile data.
+* **Financial Metrics:** * `int_customer_financial_summary`: Aggregates balances, limits, and holdings across deposit accounts, cards, loans, and investments into a single unified view per customer.
+* **Risk Analytics:** * `int_comprehensive_risk_profile`: Evaluates credit scores, KYC compliance, and fraud alerts to generate risk categories.
+* **Product Analytics:** * `int_product_penetration_analysis`, `int_channel_effectiveness`.
+
+---
+
+## Marts Layer (`models/marts`)
+
+The presentation layer. These are highly denormalized, wide tables optimized for Business Intelligence (BI) tools (like Power BI or Tableau) and end-user consumption. They are organized by business unit to ensure data is strictly tailored to stakeholder needs:
+* **Executive (`/executive`):** * `executive_customer_dashboard`: High-level KPIs such as total relationship value, active customer counts, and net worth.
+* **Customer Marketing (`/customer_marketing`):** * `customer_segmentation_analysis`: Ready-to-use data for targeted campaigns based on behavior and profitability segments.
+* **Risk Operations (`/risk_operations`):** * `risk_management_dashboard`: Monitoring defaults, delinquent loans, and high-risk customer profiles.
+* **Product Revenue (`/product_revenue`):** * `product_performance_analytics`.
+
+These models are consumed directly by:
+
+* BI dashboards
+* Reporting tools
+* Data analysts
+* Business stakeholders
+
+---
+
+# ⚙️ Prerequisites
+
+Before you begin, ensure the following dependencies are installed:
+
+* Docker Desktop (Running)
+* Astro CLI
+* Snowflake Account
+
+---
+
+# 🛠️ Local Setup & Execution
+
+## 1. Configure the Environment
+
+Create a `.env` file in the project root directory (you can copy `.env_example` if available) and configure your Airflow connection to Snowflake.
+
+Astronomer Cosmos uses this connection to execute dbt models.
+
+```env
+DBT_ROOT_PATH="include/dbt"
+
+# Snowflake Connection string for Airflow/Cosmos
+AIRFLOW_CONN_SNOWFLAKE_DEFAULT='{
+    "conn_type": "snowflake",
+    "login": "<your_snowflake_username>",
+    "password": "<your_snowflake_password>",
+    "schema": "<your_schema>",
+    "extra": {
+        "account": "<your_account_identifier>",
+        "warehouse": "<your_warehouse>",
+        "database": "<your_database>",
+        "region": "<your_region>",
+        "role": "<your_role>"
+    }
+}'
+```
+
+---
+
+## 2. Build and Start the Project
+
+The `Dockerfile` is configured to create a dedicated Python virtual environment named `dbt_venv_snowflake` specifically for `dbt-snowflake`.
+
+This approach prevents dependency conflicts between:
+
+* Airflow providers
+* dbt adapters
+
+Start the local environment:
 
 ```bash
 astro dev start
 ```
 
----
+> **Note:** If you modify the `Dockerfile` or `requirements.txt`, rebuild the environment using:
 
-## 4. Access the Airflow UI
-
-Once the containers are up and running, open your web browser and navigate to:
-
-* **URL:** `http://localhost:8080`
-* **Username:** `admin`
-* **Password:** `admin`
+```bash
+astro dev restart
+```
 
 ---
 
-## 5. Run the Pipeline
+## 3. Access Airflow
 
-1. In the Airflow UI, locate your DAG (e.g., generated by Cosmos).
-2. Unpause the DAG by clicking the toggle button.
-3. Trigger the DAG manually by clicking the **Play** icon.
+Once the containers are running, access the Airflow UI:
 
-Cosmos will automatically parse your dbt project and run the **staging**, **intermediate**, and **mart** models sequentially directly inside Snowflake.
+| Setting  | Value                 |
+| -------- | --------------------- |
+| URL      | http://localhost:8080 |
+| Username | admin                 |
+| Password | admin                 |
+
+---
+
+## 4. Run the Pipeline
+
+1. Open the Airflow UI.
+2. Locate the DAG named:
+
+```text
+customer_360_snow
+```
+
+Defined in:
+
+```text
+dags/cosmos_snowflake_dbt.py
+```
+
+3. Unpause the DAG using the toggle switch.
+4. Click **Trigger DAG** (▶ Play button).
+
+### What Happens?
+
+Thanks to Astronomer Cosmos:
+
+* The dbt project is automatically parsed.
+* `manifest.json` is used to generate task dependencies.
+* Every dbt model appears as an individual Airflow task.
+* Model execution can be monitored directly from Airflow.
+* Failed nodes can be retried independently.
 
 ---
 
 # 🛑 Stopping the Environment
 
-To stop the running Docker containers without losing your configurations or DAG run history, use:
+Stop the running containers while preserving DAG history and metadata:
 
 ```bash
 astro dev stop
 ```
 
-If you want to completely shut down the environment and wipe the local Postgres database, run:
+Perform a complete reset and remove all local Airflow metadata:
 
 ```bash
 astro dev kill
@@ -89,31 +200,55 @@ astro dev kill
 
 ---
 
-# 🤝 Contributing
+# 🧠 Key Features Implemented
 
-Contributions are welcome! To contribute:
+## Seamless dbt-Airflow Integration
 
-1. Fork the repository.
-2. Create your feature branch:
+No need for:
 
-```bash
-git checkout -b feature/AmazingFeature
-```
+* `BashOperator`
+* `DockerOperator`
 
-3. Commit your changes:
-
-```bash
-git commit -m "Add some AmazingFeature"
-```
-
-4. Push to the branch:
-
-```bash
-git push origin feature/AmazingFeature
-```
-
-5. Open a Pull Request.
+Astronomer Cosmos automatically parses the dbt project and generates the DAG structure.
 
 ---
 
+## Virtual Environment Isolation
+
+A dedicated dbt virtual environment ensures:
+
+* Clean dependency management
+* Reduced package conflicts
+* Easier maintenance
+
+---
+
+## Seed Data Injection
+
+Extensive use of dbt seeds to load static reference datasets into Snowflake.
+
+Examples:
+
+* Age cohorts
+* Currency codes
+* Fee structures
+* Business mappings
+
+---
+
+## Modular Analytics Architecture
+
+Business logic is organized into dedicated analytical domains:
+
+* Financial Metrics
+* Product Revenue
+* Risk Operations
+* Marketing Segmentation
+
+This modular design improves:
+
+* Scalability
+* Reusability
+* Testing
+* Team collaboration
 
