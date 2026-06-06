@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: FMCG
+    database: RAW
+    schema: FMCG
+    tables:
+      - name: Categories
+      - name: Cities
+      - name: Countries
+      - name: Customers
+      - name: Employees
+      - name: Products
+      - name: Sales

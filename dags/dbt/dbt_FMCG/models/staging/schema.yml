@@ -1,0 +1,91 @@
+version: 2
+
+models:
+  - name: stg_fmcg_categories
+    description: "Bronze layer: Cleaned categories data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: CategoryID
+        description: "The primary key for the categories table."
+        tests: [unique, not_null]
+
+  - name: stg_fmcg_cities
+    description: "Bronze layer: Cleaned cities data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: CityID
+        description: "The primary key for the cities table."
+        tests: [unique, not_null]
+      - name: CountryID
+        description: "The foreign key linking to the countries table."
+        tests: [not_null]
+
+  - name: stg_fmcg_countries
+    description: "Bronze layer: Cleaned countries data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: CountryID
+        description: "The primary key for the countries table."
+        tests: [unique, not_null]
+
+  - name: stg_fmcg_customers
+    description: "Bronze layer: Cleaned customers data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: CustomerID
+        description: "The primary key for the customers table."
+        tests: [unique, not_null]
+      - name: CityID
+        description: "The foreign key linking to the cities table."
+        tests: [not_null]
+
+  - name: stg_fmcg_employees
+    description: "Bronze layer: Cleaned employees data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: EmployeeID
+        description: "The primary key for the employees table."
+        tests: [unique, not_null]
+      - name: CityID
+        description: "The foreign key linking to the cities table."
+        tests: [not_null]
+
+  - name: stg_fmcg_products
+    description: "Bronze layer: Cleaned products data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: ProductID
+        description: "The primary key for the products table."
+        tests: [unique, not_null]
+      - name: CategoryID
+        description: "The foreign key linking to the categories table."
+        tests: [not_null]
+      - name: Price
+        description: "Gross price of the item."
+        tests: [not_null, is_non_negative]
+      - name: VitalityDays
+        description: "Optimal number of days of use or expiration date classification."
+        tests: [is_non_negative]
+  
+  - name: stg_fmcg_sales
+    description: "Bronze layer: Cleaned sales data from the raw Snowflake FMCG dataset."
+    columns:
+      - name: SalesID
+        description: "The primary key for the sales table."
+        tests: [unique, not_null]
+      - name: ProductID
+        description: "The foreign key linking to the products table."
+        tests: [not_null]
+      - name: CustomerID
+        description: "The foreign key linking to the customers table."
+        tests: [not_null]
+      - name: SalesPersonID
+        description: "The foreign key linking to the employees table."
+        tests: [not_null]
+      - name: Quantity
+        description: "Number of units sold."
+        tests: [not_null, is_non_negative]
+      - name: Discount
+        description: "Discount applied to the item."
+        tests: [is_non_negative]
+      - name: SalesDate
+        description: "The date when the sale occurred." 
+        tests: [not_null]
+      - name: TransactionNumber
+        description: "Invoice number / Unique transaction system."
+        tests: [not_null]
+

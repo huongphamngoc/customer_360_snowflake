@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Gold layer: Consumer-ready Customer dimension. Enriched with geography data from the intermediate layer."
+    columns:
+      - name: CustomerID
+        description: "Unique identifier for a customer."
+        tests: [unique, not_null]
+      - name: CityName
+        description: "The city where the customer resides."
+      - name: CountryName
+        description: "The country where the customer resides."
+  
+  - name: dim_products
+    description: "Gold layer: Consumer-ready Product dimension."
+    columns:
+      - name: ProductID
+        description: "Unique identifier for a product."
+        tests: [unique, not_null]
+  
+  - name: dim_employees
+    description: "Gold layer: Consumer-ready Employee dimension."
+    columns:
+      - name: EmployeeID
+        description: "Unique identifier for an employee."
+        tests: [unique, not_null]
+
+  - name: fct_sales
+    description: "Gold layer: Central transactional fact table at the line-item grain. Materialized incrementally for performance."
+    columns:
+      - name: SalesID
+        description: "Unique identifier for a sales transaction."
+        tests: [unique, not_null]
+      - name: CustomerID
+        description: "Foreign key linking to dim_customers."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: CustomerID
+      - name: ProductID
+        description: "Foreign key linking to dim_products."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: ProductID
+      - name: SalesPersonID
+        description: "Foreign key linking to dim_employees."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_employees')
+              field: EmployeeID
+      - name: UnitPrice
+        description: "The price of the product at the time of the sale."
+        tests: [not_null]

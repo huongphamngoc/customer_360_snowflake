@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_locations_joined
+    description: "Silver layer: Denormalizes City and Country data into a single lookup model to prevent repeating joins downstream."
+    columns:
+      - name: CityID
+        description: "Primary key for the city."
+        tests: [unique, not_null]
+      - name: CityName
+        description: "Text name of the city (e.g., 'HO CHI MINH', 'TOKYO')."
+      - name: CountryName
+        description: "Text name of the country (e.g., 'VIETNAM', 'JAPAN')."
+      - name: CountryCode
+        description: "ISO country code (e.g., 'VN', 'JP')."
